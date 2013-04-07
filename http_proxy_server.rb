@@ -14,7 +14,6 @@ class HTTPProxyServer < Struct.new(:port)
 
   def handle_request(client_socket)
     begin
-      client_ip = client_socket.remote_address.ip_address
       request_header = HTTPHeader.read_header(client_socket)
       verb, url = request_header.lines.first.split(' ')
       uri = URI.parse(url)
