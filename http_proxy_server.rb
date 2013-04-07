@@ -12,6 +12,7 @@ class HTTPProxyServer < Struct.new(:port)
 
   private
 
+  # Payload for each threaded request
   def handle_request(client_socket)
     begin
       request_header = HTTPHeader.read_header(client_socket)
@@ -38,6 +39,12 @@ class HTTPProxyServer < Struct.new(:port)
     end
   end
 
+  # Forward message body from one socket to another.
+  # The size should be in bytes. Most often it will come from
+  # Content-Length message header.
+  # If the data is transfered in chunks with keep-alive true
+  # (Content-Length not present), it should handle that case
+  # gracefully in most cases :)
   def forward_data(from, to, size)
     if size
       sent = 0
