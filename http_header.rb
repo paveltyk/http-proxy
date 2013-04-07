@@ -1,3 +1,4 @@
+# Copyright 2013 Pavel Tsiukhtsiayeu https://github.com/PavelTyk/
 class HTTPHeader < String
   def self.read_header(socket)
     self.new.tap do |req|
