@@ -19,18 +19,22 @@ class HTTPProxyServer < Struct.new(:port)
       verb, url = request_header.lines.first.split(' ')
       uri = URI.parse(url)
 
-      log "#{verb} #{url}"
+      response = cache.fetch(request_header) do
+        server_socket = TCPSocket.new(uri.host, uri.port)
+        server_socket.write(request_header)
 
-      server_socket = TCPSocket.new(uri.host, uri.port)
-      server_socket.write(request_header)
+        response_header = HTTPHeader.read_header(server_socket)
 
-      response_header = HTTPHeader.read_header(server_socket)
+        if response_header.content_type
+          size = response_header.content_length
+          chunked = response_header.transfer_encoding == 'chunked'
+          response_header << read_data(server_socket, size, chunked)
+        end
 
-      client_socket.write(response_header)
-
-      if response_header.content_type
-        forward_data(server_socket, client_socket, response_header.content_length)
+        response_header
       end
+
+      client_socket.write(response)
     rescue => e
       log e
     ensure
@@ -39,29 +43,28 @@ class HTTPProxyServer < Struct.new(:port)
     end
   end
 
-  # Forward message body from one socket to another.
-  # The size should be in bytes. Most often it will come from
-  # Content-Length message header.
-  # If the data is transfered in chunks with keep-alive true
-  # (Content-Length not present), it should handle that case
-  # gracefully in most cases :)
-  def forward_data(from, to, size)
+  def read_data(socket, size, chunked)
+    data = ''
     if size
       sent = 0
       while sent < size do
-        sent = sent + to.write(from.readpartial(1024))
-        to.flush
+        socket.readpartial(1024).tap do |partial|
+          sent += partial.size
+          data << partial
+        end
       end
-    else
+    elsif chunked
       begin
         loop do
-          sent = to.write(from.read(1024))
-          to.flush
-          break if sent < 1024
+          partial = socket.readpartial(1024)
+          data << partial
+          break if partial =~ /\r\n0\r\n$/
         end
       rescue EOFError
       end
     end
+
+    data
   end
 
   def server
@@ -73,7 +76,14 @@ class HTTPProxyServer < Struct.new(:port)
   end
 
   def log(msg)
+    logger.log(msg)
+  end
+
+  def logger
     @logger ||= Logger.new
-    @logger.log(msg)
+  end
+
+  def cache
+    @cache ||= Cache.new(logger)
   end
 end
