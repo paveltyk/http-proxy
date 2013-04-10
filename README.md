@@ -9,8 +9,3 @@ How to start proxy server
 Simply start server via: `./proxy.sh`
 
 By default Proxy server will listen to port *8080*. To specify port, pass it as first argument: `./proxy.sh 8008`
-
-TODO
-----
-
-* Caching system

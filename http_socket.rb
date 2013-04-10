@@ -1,3 +1,4 @@
+# Copyright 2013 Pavel Tsiukhtsiayeu https://github.com/PavelTyk/
 module HTTPSocket
   def self.included(base)
     base.class_eval do
