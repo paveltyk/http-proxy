@@ -16,6 +16,8 @@ class HTTPProxyServer < Struct.new(:port)
   def handle_request(client_socket)
     begin
       request_header = client_socket.http_header
+      return unless request_header.lines.first
+
       url = request_header.lines.first.split(' ')[1]
       uri = URI.parse(url)
 
