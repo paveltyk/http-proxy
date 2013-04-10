@@ -1,11 +1,11 @@
-class Cache < Struct.new(:logger)
+class Cache
   def fetch(obj)
     key = to_key(obj)
     if store[key]
-      log "Cache hit: #{key.to_s.inspect}"
+      Logger.log "Cache hit: #{key.to_s.inspect}"
       store[key]
     else
-      log "Cache miss: #{key.to_s.inspect}"
+      Logger.log "Cache miss: #{key.to_s.inspect}"
       store[key] = yield
     end
   end
@@ -18,9 +18,5 @@ class Cache < Struct.new(:logger)
 
   def store
     @store ||= Hash.new
-  end
-
-  def log(msg)
-    logger.log(msg)
   end
 end
